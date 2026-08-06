@@ -347,9 +347,12 @@ border:2px solid rgba(251,191,36,.45);font-weight:800;box-shadow:0 0 18px rgba(2
 }
 .cp:hover::after{opacity:1;}
 /* Posiciones desktop */
-.battery{left:65px;top:50%;transform:translateY(-50%);}
-.resistor{left:290px;top:50%;transform:translateY(-50%);}
-.led{left:495px;top:50%;transform:translateY(-50%);}
+@media(min-width:900px){
+#board{min-height:560px;}
+}
+.battery{left:40px;top:18%;transform:translateY(-50%);}
+.resistor{left:330px;top:78%;transform:translateY(-50%);}
+.led{left:600px;top:32%;transform:translateY(-50%);}
 @media(max-width:700px){
 .battery{left:5%;top:16%;transform:none;}
 .resistor{left:48%;top:16%;transform:none;}
