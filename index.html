@@ -266,6 +266,7 @@ box-shadow:0 0 25px rgba(79,172,254,.3);
 .comp{position:absolute;z-index:10;cursor:grab;touch-action:none;user-select:none;}
 .comp:active{cursor:grabbing;}
 .comp.dragging{opacity:.9;z-index:100;filter:brightness(1.2);}
+.comp-inner{position:relative;transition:transform .35s ease;transform-origin:center center;}
 .comp-base{
 background:linear-gradient(135deg,rgba(30,41,59,.95),rgba(15,23,42,.95));
 border:2px solid rgba(79,172,254,.4);border-radius:14px;padding:10px;
@@ -273,6 +274,23 @@ box-shadow:0 8px 22px rgba(0,0,0,.6),0 0 18px rgba(79,172,254,.2);
 transition:box-shadow .3s;
 }
 .comp:hover .comp-base{box-shadow:0 10px 28px rgba(0,0,0,.7),0 0 28px rgba(79,172,254,.35);}
+.comp.comp-selected .comp-base{box-shadow:0 0 0 3px #fbbf24,0 8px 22px rgba(0,0,0,.6),0 0 30px rgba(251,191,36,.6);}
+/* Botón de rotar */
+.rotate-btn{
+position:absolute;top:-14px;right:-14px;
+width:34px;height:34px;border-radius:50%;
+background:linear-gradient(135deg,#4facfe,#0891b2);
+border:3px solid rgba(255,255,255,.85);
+color:#fff;font-size:1.15em;font-weight:900;line-height:1;
+display:none;align-items:center;justify-content:center;
+cursor:pointer;z-index:26;padding:0;
+box-shadow:0 0 15px rgba(79,172,254,.6),0 4px 10px rgba(0,0,0,.4);
+transition:all .25s;touch-action:manipulation;
+}
+.comp.comp-selected .rotate-btn{display:flex;animation:rotBtnPulse 1.6s ease-in-out infinite;}
+@keyframes rotBtnPulse{0%,100%{box-shadow:0 0 15px rgba(79,172,254,.6),0 4px 10px rgba(0,0,0,.4);}50%{box-shadow:0 0 26px rgba(79,172,254,.9),0 4px 14px rgba(0,0,0,.5);}}
+.rotate-btn:hover{transform:scale(1.15) rotate(90deg);}
+.rotate-btn:active{transform:scale(.95) rotate(90deg);}
 /* Batería */
 .battery{width:88px;text-align:center;}
 .batt-body{
@@ -544,6 +562,7 @@ Tu misión: Conectar batería, resistencia y LED en el orden correcto.
 <div class="instrbox">
 🎯 <strong>3 cables</strong> completan el circuito.<br>
 💡 Pata larga (+) siempre al positivo.<br>
+🔄 Toca un componente y usa el botón ↻ para rotarlo.<br>
 ⚠️ ¡Nunca conectes el LED directo a la batería!
 </div>
 <button class="btn btn-ok" onclick="verify()">✓ VERIFICAR CIRCUITO</button>
@@ -551,13 +570,15 @@ Tu misión: Conectar batería, resistencia y LED en el orden correcto.
 </div>
 <div class="panel">
 <div class="section-title">⚡ Tablero de Circuitos</div>
-<p style="text-align:center;font-size:.82em;opacity:.75;margin-bottom:12px;">📱 Toca un punto dorado → luego toca otro</p>
+<p style="text-align:center;font-size:.82em;opacity:.75;margin-bottom:12px;">📱 Toca un punto dorado → luego toca otro<br>🔄 Toca un componente y gíralo con el botón</p>
 <div class="board-wrap">
 <div id="board">
 <div class="board-hud"><div class="hud-dot"></div><span class="hud-txt">CIRCUITO ACTIVO</span><div class="hud-dot"></div></div>
 <svg id="wire-svg"></svg>
 <!-- BATERÍA -->
-<div class="comp battery" id="cb">
+<div class="comp battery" id="cb" data-rot="0">
+<button class="rotate-btn" type="button" onclick="rotateComp(event,'cb')" title="Rotar">↻</button>
+<div class="comp-inner">
 <div class="cp" data-c="battery" data-t="positive" data-tip="+ Batería" style="top:-24px;left:50%;transform:translateX(-50%);"></div>
 <div class="comp-base">
 <div class="batt-body">
@@ -568,8 +589,11 @@ Tu misión: Conectar batería, resistencia y LED en el orden correcto.
 </div>
 <div class="cp" data-c="battery" data-t="negative" data-tip="− Batería" style="bottom:-24px;left:50%;transform:translateX(-50%);"></div>
 </div>
+</div>
 <!-- RESISTENCIA -->
-<div class="comp resistor" id="cr">
+<div class="comp resistor" id="cr" data-rot="0">
+<button class="rotate-btn" type="button" onclick="rotateComp(event,'cr')" title="Rotar">↻</button>
+<div class="comp-inner">
 <div class="cp" data-c="resistor" data-t="left" data-tip="Lado Izq." style="top:50%;left:-22px;transform:translateY(-50%);"></div>
 <div class="comp-base" style="padding:7px 5px;">
 <div style="position:relative;">
@@ -580,8 +604,11 @@ Tu misión: Conectar batería, resistencia y LED en el orden correcto.
 </div>
 <div class="cp" data-c="resistor" data-t="right" data-tip="Lado Der." style="top:50%;right:-22px;transform:translateY(-50%);"></div>
 </div>
+</div>
 <!-- LED -->
-<div class="comp led" id="cl">
+<div class="comp led" id="cl" data-rot="0">
+<button class="rotate-btn" type="button" onclick="rotateComp(event,'cl')" title="Rotar">↻</button>
+<div class="comp-inner">
 <div class="led-sign led-sp">+</div>
 <div class="cp" data-c="led" data-t="positive" data-tip="+ LED (pata larga)" style="top:-24px;left:14px;"></div>
 <div class="comp-base" style="border-radius:50% 50% 14px 14px;padding:7px;">
@@ -594,9 +621,10 @@ Tu misión: Conectar batería, resistencia y LED en el orden correcto.
 </div>
 </div>
 </div>
+</div>
 <!-- INFO -->
 <div class="info-box">
-La <strong>resistencia 330Ω</strong> es esencial: limita la corriente que llega al LED para que no se queme. Sin ella, el LED recibiría demasiada energía y se dañaría al instante. El flujo correcto es: batería → resistencia → LED → batería.
+La <strong>resistencia 330Ω</strong> es esencial: limita la corriente que llega al LED para que no se queme. Sin ella, el LED recibiría demasiada energía y se dañaría al instante. La resistencia <strong>no tiene polaridad</strong>, así que puede ir antes o después del LED: batería → resistencia → LED → batería, o batería → LED → resistencia → batería. Ambas formas son válidas.
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -634,6 +662,7 @@ battery:{title:'🔋 Batería — Fuente de Energía',sym:'🔋',secs:[
 resistor:{title:'━━┯━━ Resistencia — El Protector',sym:'━━┯━━',secs:[
 {h:'¿Qué es?',p:'Dificulta el paso de corriente. Como estrechar una tubería para reducir el flujo de agua.'},
 {h:'Función',ul:['Protege al LED de recibir demasiada corriente.','Sin ella, el LED se quemaría en segundos.','Convierte el exceso de energía en calor.']},
+{h:'🔄 No tiene polaridad',p:'A diferencia de la batería o el LED, la resistencia <strong>no tiene lado + ni −</strong>. Puedes girarla o conectarla en cualquier sentido: siempre limita la corriente de la misma forma en todo el circuito, sin importar si va antes o después del LED.'},
 {h:'🎨 Código de Colores',tbl:'<table class="clr-tbl"><thead><tr><th>Color</th><th>Dígito</th><th>Multiplicador</th></tr></thead><tbody><tr><td><span class="clr-sample" style="background:#000"></span>Negro</td><td>0</td><td>×1</td></tr><tr><td><span class="clr-sample" style="background:#8B4513"></span>Café</td><td>1</td><td>×10</td></tr><tr><td><span class="clr-sample" style="background:#FF0000"></span>Rojo</td><td>2</td><td>×100</td></tr><tr><td><span class="clr-sample" style="background:#FFA500"></span>Naranja</td><td>3</td><td>×1K</td></tr><tr><td><span class="clr-sample" style="background:#FFFF00;border-color:#888"></span>Amarillo</td><td>4</td><td>×10K</td></tr><tr><td><span class="clr-sample" style="background:#00C000"></span>Verde</td><td>5</td><td>×100K</td></tr></tbody></table><div style="background:rgba(255,255,255,.08);padding:10px;border-radius:9px;margin-top:10px;"><p style="color:#fbbf24;font-weight:900;">📌 330Ω = Naranja(3)+Naranja(3)+Café(×10) = 33×10 = <strong style="color:#fff">330Ω</strong></p></div>'},
 {h:'🎓 Dato curioso',p:'¡Tu celular tiene cientos de resistencias! Son uno de los componentes más usados en electrónica.'}
 ]},
@@ -647,12 +676,16 @@ led:{title:'💡 LED — Diodo Emisor de Luz',sym:'💡',secs:[
 // ══════════ VARIABLES ══════════
 let wires=[],selPt=null,colorIdx=0,complete=false;
 let dragEl=null,ox=0,oy=0,dragging=false,tid=null;
+let selectedComp=null,sx=0,sy=0,moved=false;
 let energyRAF=null;
 const COLORS=['#ef4444','#06b6d4','#4facfe','#fbbf24'];
 const MAX=3;
 // ══════════ INIT ══════════
 document.addEventListener('DOMContentLoaded',()=>{
 setupPoints();setupDrag();resizeSVG();
+document.getElementById('board').addEventListener('click',e=>{
+if(e.target.id==='board'&&selectedComp){selectedComp.classList.remove('comp-selected');selectedComp=null;}
+});
 window.addEventListener('resize',()=>{resizeSVG();redraw();});
 });
 function resizeSVG(){
@@ -713,6 +746,22 @@ void pt.offsetWidth;
 pt.classList.add('flash');
 setTimeout(()=>pt.classList.remove('flash'),550);
 }
+// ══════════ SELECCIÓN Y ROTACIÓN ══════════
+function selectComp(el){
+if(selectedComp&&selectedComp!==el){selectedComp.classList.remove('comp-selected');}
+if(selectedComp===el){el.classList.remove('comp-selected');selectedComp=null;}
+else{el.classList.add('comp-selected');selectedComp=el;showToast('🔧 Componente seleccionado — toca ↻ para rotar','info');}
+}
+function rotateComp(e,id){
+e.preventDefault();e.stopPropagation();
+const el=document.getElementById(id);
+let rot=(parseInt(el.dataset.rot||'0',10)+90)%360;
+el.dataset.rot=rot;
+const inner=el.querySelector('.comp-inner');
+if(inner)inner.style.transform='rotate('+rot+'deg)';
+redraw();
+showToast('🔄 Rotado a '+rot+'°','success');
+}
 // ══════════ DRAG ══════════
 function setupDrag(){
 document.querySelectorAll('.comp').forEach(c=>{
@@ -727,18 +776,20 @@ document.addEventListener('touchcancel',stopD);
 }
 function startD(e){
 const t=e.target;
-if(t.classList.contains('cp'))return;
+if(t.classList.contains('cp')||t.classList.contains('rotate-btn'))return;
 e.preventDefault();
-dragEl=e.currentTarget;dragging=false;
+dragEl=e.currentTarget;dragging=false;moved=false;
 const r=dragEl.getBoundingClientRect();
-if(e.type==='touchstart'){const tc=e.touches[0];tid=tc.identifier;ox=tc.clientX-r.left;oy=tc.clientY-r.top;}
-else{ox=e.clientX-r.left;oy=e.clientY-r.top;}
+if(e.type==='touchstart'){const tc=e.touches[0];tid=tc.identifier;ox=tc.clientX-r.left;oy=tc.clientY-r.top;sx=tc.clientX;sy=tc.clientY;}
+else{ox=e.clientX-r.left;oy=e.clientY-r.top;sx=e.clientX;sy=e.clientY;}
 }
 function doD(e){
 if(!dragEl)return;e.preventDefault();
 let cx,cy;
 if(e.type==='touchmove'){const t=Array.from(e.touches).find(t=>t.identifier===tid);if(!t)return;cx=t.clientX;cy=t.clientY;}
 else{cx=e.clientX;cy=e.clientY;}
+if(Math.abs(cx-sx)>6||Math.abs(cy-sy)>6)moved=true;
+if(!moved)return;
 dragging=true;dragEl.classList.add('dragging');
 const b=document.getElementById('board'),br=b.getBoundingClientRect();
 const x=Math.max(5,Math.min(cx-br.left-ox,b.scrollWidth-dragEl.offsetWidth-5));
@@ -747,7 +798,10 @@ dragEl.style.left=x+'px';dragEl.style.top=y+'px';dragEl.style.transform='none';
 redraw();
 }
 function stopD(){
-if(dragEl)dragEl.classList.remove('dragging');
+if(dragEl){
+dragEl.classList.remove('dragging');
+if(!moved){selectComp(dragEl);}
+}
 setTimeout(()=>{dragging=false;},60);
 dragEl=null;tid=null;
 }
@@ -856,6 +910,8 @@ document.getElementById('scLed').textContent=document.getElementById('cl').class
 }
 function updateProg(){document.getElementById('prog').style.width=(wires.length/MAX*100)+'%';document.getElementById('scProg').textContent=Math.round((wires.length/MAX)*100)+'%';}
 // ══════════ MISIONES ══════════
+// La resistencia NO tiene polaridad ni una posición fija correcta: lo único
+// que importa es que quede en serie en el lazo, sin importar el orden.
 function buildConn(){
 const c={};
 wires.forEach(w=>{
@@ -867,25 +923,37 @@ c[k1].push(k2);c[k2].push(k1);
 return c;
 }
 function chk(c,a,b){return c[a]?c[a].includes(b):false;}
-function checkMissions(){
+// Evalúa las dos topologías físicamente equivalentes:
+// Opción A: Batería(+) → Resistencia → LED(+) ... LED(−) → Batería(−)
+// Opción B: Batería(+) → LED(+) ... LED(−) → Resistencia → Batería(−)
+function evalCircuit(){
 const c=buildConn();
-const m=[
-chk(c,'battery-positive','resistor-left')||chk(c,'battery-positive','resistor-right'),
-(chk(c,'resistor-left','led-positive')&&!chk(c,'resistor-right','led-positive'))||(chk(c,'resistor-right','led-positive')&&!chk(c,'resistor-left','led-positive')),
-chk(c,'led-negative','battery-negative')
-];
-['m1','m2','m3'].forEach((id,i)=>document.getElementById(id).classList.toggle('done',m[i]));
+const battToRes=chk(c,'battery-positive','resistor-left')||chk(c,'battery-positive','resistor-right');
+const resToLedPos=chk(c,'resistor-left','led-positive')||chk(c,'resistor-right','led-positive');
+const ledNegToBatt=chk(c,'led-negative','battery-negative');
+const battToLedPos=chk(c,'battery-positive','led-positive');
+const resToBattNeg=chk(c,'resistor-left','battery-negative')||chk(c,'resistor-right','battery-negative');
+const ledNegToRes=chk(c,'led-negative','resistor-left')||chk(c,'led-negative','resistor-right');
+const optionA={m1:battToRes,m2:resToLedPos,m3:ledNegToBatt};
+const optionB={m1:battToLedPos,m2:ledNegToRes,m3:resToBattNeg};
+const okA=optionA.m1&&optionA.m2&&optionA.m3;
+const okB=optionB.m1&&optionB.m2&&optionB.m3;
+// Para marcar las misiones en pantalla, usamos la opción que va más adelantada.
+const scoreA=(optionA.m1?1:0)+(optionA.m2?1:0)+(optionA.m3?1:0);
+const scoreB=(optionB.m1?1:0)+(optionB.m2?1:0)+(optionB.m3?1:0);
+const best=scoreB>scoreA?optionB:optionA;
+return{ok:okA||okB,m:[best.m1,best.m2,best.m3]};
+}
+function checkMissions(){
+const r=evalCircuit();
+['m1','m2','m3'].forEach((id,i)=>document.getElementById(id).classList.toggle('done',r.m[i]));
 }
 // ══════════ VERIFICAR ══════════
 function verify(){
 if(wires.length<MAX){showToast(`❌ Faltan ${MAX-wires.length} cable(s)`,'error');return;}
-const c=buildConn();
-const m1=chk(c,'battery-positive','resistor-left')||chk(c,'battery-positive','resistor-right');
-const m2=(chk(c,'resistor-left','led-positive')&&!chk(c,'resistor-right','led-positive'))||(chk(c,'resistor-right','led-positive')&&!chk(c,'resistor-left','led-positive'));
-const m3=chk(c,'led-negative','battery-negative');
-if(m1&&m2&&m3){
+const r=evalCircuit();
+if(r.ok){
 complete=true;
-// ✅ ENCENDER EL LED AUTOMÁTICAMENTE
 document.getElementById('cl').classList.add('active');
 document.getElementById('celeb').classList.add('active');
 confetti();
@@ -894,11 +962,7 @@ runEnergyAnimation();
 } else {
 complete=false;
 document.getElementById('cl').classList.remove('active');
-let msg='❌ Revisa: ';
-if(!m1)msg+='Batería(+)→Resistencia. ';
-if(!m2)msg+='Resistencia→LED(+). ';
-if(!m3)msg+='LED(−)→Batería(−).';
-showToast(msg,'error');
+showToast('❌ Revisa el orden: Batería(+) → Resistencia y LED(+) en serie → LED(−) → Batería(−)','error');
 }
 updateUI();
 }
@@ -907,7 +971,13 @@ function resetAll(){
 wires=[];colorIdx=0;
 document.getElementById('wire-svg').innerHTML='';
 document.querySelectorAll('.cp').forEach(p=>p.classList.remove('connected','selected','flash'));
-selPt=null;complete=false;
+document.querySelectorAll('.comp').forEach(c=>{
+c.classList.remove('comp-selected');
+c.dataset.rot='0';
+const inner=c.querySelector('.comp-inner');
+if(inner)inner.style.transform='rotate(0deg)';
+});
+selPt=null;complete=false;selectedComp=null;
 document.getElementById('cl').classList.remove('active');
 ['m1','m2','m3'].forEach(id=>document.getElementById(id).classList.remove('done'));
 updateUI();updateProg();
