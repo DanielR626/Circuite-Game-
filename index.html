@@ -683,6 +683,7 @@ const MAX=3;
 // ══════════ INIT ══════════
 document.addEventListener('DOMContentLoaded',()=>{
 setupPoints();setupDrag();resizeSVG();
+shuffleComponents();
 document.getElementById('board').addEventListener('click',e=>{
 if(e.target.id==='board'&&selectedComp){selectedComp.classList.remove('comp-selected');selectedComp=null;}
 });
@@ -692,6 +693,39 @@ function resizeSVG(){
 const b=document.getElementById('board'),s=document.getElementById('wire-svg');
 s.setAttribute('width',b.scrollWidth||b.offsetWidth);
 s.setAttribute('height',b.scrollHeight||b.offsetHeight);
+}
+// ══════════ DESORDEN INICIAL ══════════
+// Ubica cada componente en una posición aleatoria del tablero (repartidas en
+// franjas para que no queden amontonados) y con una rotación aleatoria, para
+// que el reto incluya ordenar y girar las piezas antes de cablear.
+function shuffleComponents(){
+const board=document.getElementById('board');
+const comps=Array.from(document.querySelectorAll('.comp'));
+const bw=board.clientWidth,bh=board.clientHeight;
+const pad=16,topPad=64,bottomPad=16;
+const slotW=bw/comps.length;
+const slots=comps.map((_,i)=>i);
+for(let i=slots.length-1;i>0;i--){
+const j=Math.floor(Math.random()*(i+1));
+[slots[i],slots[j]]=[slots[j],slots[i]];
+}
+comps.forEach((el,idx)=>{
+const w=el.offsetWidth||90,h=el.offsetHeight||90;
+const slot=slots[idx];
+const minX=slot*slotW+pad;
+const maxX=(slot+1)*slotW-w-pad;
+const x=Math.max(pad,Math.round(minX+Math.random()*Math.max(0,maxX-minX)));
+const availH=Math.max(20,bh-topPad-bottomPad-h);
+const y=Math.round(topPad+Math.random()*availH);
+el.style.left=x+'px';
+el.style.top=y+'px';
+el.style.transform='none';
+const rot=[0,90,180,270][Math.floor(Math.random()*4)];
+el.dataset.rot=rot;
+const inner=el.querySelector('.comp-inner');
+if(inner)inner.style.transform='rotate('+rot+'deg)';
+});
+redraw();
 }
 // ══════════ MODAL ══════════
 function showModal(key){
@@ -971,17 +1005,13 @@ function resetAll(){
 wires=[];colorIdx=0;
 document.getElementById('wire-svg').innerHTML='';
 document.querySelectorAll('.cp').forEach(p=>p.classList.remove('connected','selected','flash'));
-document.querySelectorAll('.comp').forEach(c=>{
-c.classList.remove('comp-selected');
-c.dataset.rot='0';
-const inner=c.querySelector('.comp-inner');
-if(inner)inner.style.transform='rotate(0deg)';
-});
+document.querySelectorAll('.comp').forEach(c=>c.classList.remove('comp-selected'));
 selPt=null;complete=false;selectedComp=null;
 document.getElementById('cl').classList.remove('active');
 ['m1','m2','m3'].forEach(id=>document.getElementById(id).classList.remove('done'));
+shuffleComponents();
 updateUI();updateProg();
-showToast('🔄 Reiniciado — ¡Inténtalo de nuevo!','info');
+showToast('🔄 Reiniciado — ¡Los componentes se reordenaron!','info');
 }
 // ══════════ CONFETTI ══════════
 function confetti(){
